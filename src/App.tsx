@@ -1,23 +1,44 @@
 import { useState } from 'react'
 import { evaluate, parse, Registry } from './core'
+import { FileDropzone } from './components/FileDropzone'
+import { readFileAsWindows1252 } from './lib/readFile'
 
 const registry = new Registry()
 
+interface LoadedFile {
+  name: string
+}
+
 function App() {
-  const [source, setSource] = useState('')
+  const [loadedFiles, setLoadedFiles] = useState<LoadedFile[]>([])
   const [tables, setTables] = useState<string[]>([])
   const [selected, setSelected] = useState('')
   const [result, setResult] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
 
-  function handleLoad() {
-    registry.clear()
-    const { tables: parsed, warnings: parseWarnings } = parse(source)
-    registry.add(parsed)
+  async function handleFiles(files: File[]) {
+    const allWarnings: string[] = []
+    for (const file of files) {
+      const source = await readFileAsWindows1252(file)
+      const { tables: parsed, warnings: parseWarnings } = parse(source)
+      registry.add(parsed)
+      allWarnings.push(...parseWarnings.map(w => `${file.name} line ${w.line}: ${w.message}`))
+      setLoadedFiles(prev => [...prev, { name: file.name }])
+    }
     const names = registry.listNames()
     setTables(names)
-    setSelected(names[0] ?? '')
-    setWarnings(parseWarnings.map(w => `Line ${w.line}: ${w.message}`))
+    if (names.length && !selected) setSelected(names[0])
+    setWarnings(allWarnings)
+  }
+
+  function handleRemoveFile(name: string) {
+    const remaining = loadedFiles.filter(f => f.name !== name)
+    setLoadedFiles(remaining)
+    registry.clear()
+    setTables([])
+    setSelected('')
+    setResult('')
+    setWarnings([`Removed ${name}. Reload remaining files to rebuild registry.`])
   }
 
   function handleGenerate() {
@@ -30,16 +51,15 @@ function App() {
   return (
     <div>
       <h1>IPT Web</h1>
-      <textarea
-        value={source}
-        onChange={e => setSource(e.target.value)}
-        rows={10}
-        cols={60}
-        placeholder="Paste .ipt content here…"
-      />
-      <br />
-      <button onClick={handleLoad}>Load</button>
-      <br />
+      <FileDropzone onFiles={handleFiles} />
+      <ul>
+        {loadedFiles.map(f => (
+          <li key={f.name}>
+            {f.name}
+            <button onClick={() => handleRemoveFile(f.name)}>×</button>
+          </li>
+        ))}
+      </ul>
       <select value={selected} onChange={e => setSelected(e.target.value)}>
         {tables.map(t => <option key={t} value={t}>{t}</option>)}
       </select>
