@@ -42,9 +42,8 @@ function parseEntry(raw: string, lineNum: number, warnings: ParseWarning[]): Ent
       continue;
     }
 
-    // [!N TableName >> filter] or [!N TableName>>filter]
-    const multiMatch = inner.match(/^!(\d+)\s+(\S+?)\s*>>\s*(\S+)$/) ||
-                       inner.match(/^!(\d+)\s+(\S+?)>>\s*(\S+)$/);
+    // [!N TableName >> filter] — tolerates any whitespace around >>
+    const multiMatch = inner.match(/^!(\d+)\s+(\S+?)\s*>>\s*(\S+)$/);
     if (multiMatch) {
       const count = parseInt(multiMatch[1], 10);
       const tableName = decodeHtmlEntityName(multiMatch[2]);
