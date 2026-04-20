@@ -19,6 +19,15 @@ export default function App() {
   const [selected, setSelected] = useState('')
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const registryRef = useRef(registry)
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    return stored ? stored === 'dark' : true
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
 
   async function handleFiles(files: File[]) {
     for (const file of files) {
@@ -69,9 +78,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <header className="border-b border-slate-200 dark:border-slate-800 px-6 py-3">
-        <h1 className="font-semibold text-lg">IPT Web</h1>
-        <p className="text-xs text-slate-500">.ipt generator runner — client-side, no server</p>
+      <header className="border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="font-semibold text-lg">IPT Web</h1>
+          <p className="text-xs text-slate-500">.ipt generator runner — client-side, no server</p>
+        </div>
+        <button
+          onClick={() => setDark(d => !d)}
+          className="p-2 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          title={dark ? 'Passer en mode clair' : 'Passer en mode sombre'}
+        >
+          {dark ? '☀️' : '🌙'}
+        </button>
       </header>
 
       <div className="flex flex-col md:flex-row gap-0 md:gap-0 max-w-6xl mx-auto">
